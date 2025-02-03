@@ -1,7 +1,7 @@
 import Uppy from "@uppy/core";
 import XHRUpload from "@uppy/xhr-upload";
 import DropTarget from "@uppy/drop-target";
-
+import { ENV_VARs } from "../../../../env.vars";
 
 
 export const createUppyInstance = (assessmentId: number) => {
@@ -15,7 +15,7 @@ export const createUppyInstance = (assessmentId: number) => {
   }); 
 
   uppy.use(XHRUpload, {
-    endpoint: "http://localhost:3000/assessments/saveAnswers",
+    endpoint: `${ENV_VARs.URL}/assessments/saveAnswers`,
     method: "POST",
     headers: {
       "Content-Type": "multipart/form-data",
@@ -30,13 +30,5 @@ export const createUppyInstance = (assessmentId: number) => {
   uppy.on('file-added', (file) => {
 console.log('file object: ', file);
   });
-  //  uppy.on("file-added", (file) => {
-  //    const fileSizeInMB = file.size
-  //      ? (file.size / (1024 * 1024)).toFixed(2)
-  //      : "0.00";
-  //    console.log(`File added: ${file.name}, size: ${fileSizeInMB} MB`);
-  //  });
-
-
   return uppy;
 };

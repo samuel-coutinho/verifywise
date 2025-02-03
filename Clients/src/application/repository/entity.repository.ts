@@ -99,7 +99,7 @@ export async function updateEntityById({
   authToken = getAuthToken(),
 }: RequestParams): Promise<any> {
   try {
-    const response = await apiServices.patch(routeUrl, body, {
+    const response = await apiServices.put(routeUrl, body, {
       headers: { Authorization: `Bearer ${authToken}` },
     });
     console.log(
@@ -176,6 +176,7 @@ export async function checkUserExists({
     const response = await apiServices.get(routeUrl, {
       headers: { Authorization: `Bearer ${authToken}` },
     });
+    console.log("response :::> ", response);
     return response.data;
   } catch (error) {
     console.error("Error checking if user exists:", error);

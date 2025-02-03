@@ -21,7 +21,7 @@ import { assessments } from "./assessments";
 import { priorities, PriorityLevel } from "./priorities";
 import { apiServices } from "../../../../infrastructure/api/networkServices";
 import Alert from "../../../components/Alert";
-import FileUploadModal from "../../../components/Modals/FileUpload";
+import FileUploadComponent from "../../../components/FileUpload";
 import DualButtonModal from "../../../vw-v2-components/Dialogs/DualButtonModal";
 
 interface AssessmentValue {
@@ -71,7 +71,10 @@ const AllAssessment = () => {
   //modal
   const [fileUploadModalOpen, setFileUploadModalOpen] = useState(false);
   const handleOpenFileUploadModal = () => setFileUploadModalOpen(true);
-  const handleCloseFileUploadModal = () => setFileUploadModalOpen(false);
+  const handleCloseFileUploadModal = () => {
+    console.log("Closing file upload modal");
+    setFileUploadModalOpen(false);
+  };
 
   const activeAssessmentId = Topics[activeTab]?.id;
 
@@ -268,7 +271,7 @@ const AllAssessment = () => {
               {question.question}
               {question.hint && (
                 <Box component="span" ml={2}>
-                  <Tooltip title={question.hint}>
+                  <Tooltip title={question.hint} sx={{ fontSize: 12 }}>
                     <InfoOutlinedIcon fontSize="inherit" />
                   </Tooltip>
                 </Box>
@@ -486,19 +489,19 @@ const AllAssessment = () => {
           onClick={() => setAlert({ show: false, message: "" })}
         />
       )}
-      {/* FileUploadModal*/}
-      <FileUploadModal
+      {/* FileUploadComponent*/}
+
+      <FileUploadComponent
         open={fileUploadModalOpen}
-        onClose={handleCloseFileUploadModal}
-        uploadProps={{
-          onSuccess: () => {
-            console.log("File uploaded successfully!");
-            handleCloseFileUploadModal();
-          },
-          onError: (errorMessage: string) => console.error(errorMessage),
-          allowedFileTypes: ["application/pdf"],
-          assessmentId: activeAssessmentId,
+        onSuccess={() => {
+          console.log("File uploaded successfully");
+          handleCloseFileUploadModal();
         }}
+        onError={(message) => console.log("Error uploading file: ", message)}
+        onStart={() => console.log("File upload started")}
+        onClose={handleCloseFileUploadModal}
+        allowedFileTypes={["application/pdf"]}
+        assessmentId={activeAssessmentId}
       />
       {isModalOpen && (
         <DualButtonModal
@@ -512,6 +515,7 @@ const AllAssessment = () => {
           onProceed={confirmSave}
           proceedButtonColor="primary"
           proceedButtonVariant="contained"
+          TitleFontSize={13}
         />
       )}
     </Box>
