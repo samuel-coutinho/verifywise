@@ -72,7 +72,8 @@ try {
   //   console.log(`Server running on port http://localhost:${port}/`);
   // });
   const port = parseInt(process.env.PORT || "3000", 10);
-  app.listen(port, '0.0.0.0', () => {
+  const host = process.env.HOST || '0.0.0.0';
+  app.listen(port, host, () => {
     console.log(`Server running on port http://0.0.0.0:${port}/`);
   });
 } catch (error) {
