@@ -28,7 +28,7 @@ const swaggerDoc = YAML.load("./swagger.yaml");
 
 const app = express();
 
-const port = process.env.PORT || 3000;
+const port = parseInt(process.env.PORT || "3000", 10);
 
 try {
   (async () => {
@@ -71,7 +71,7 @@ try {
   // app.listen(port, () => {
   //   console.log(`Server running on port http://localhost:${port}/`);
   // });
-  const port = process.env.PORT || 3000;
+  const port = parseInt(process.env.PORT || "3000", 10);
   app.listen(port, '0.0.0.0', () => {
     console.log(`Server running on port http://0.0.0.0:${port}/`);
   });
