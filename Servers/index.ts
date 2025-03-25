@@ -68,13 +68,14 @@ try {
     res.json("Welcome to  VerifyWise root directory.");
   });
 
-  // app.listen(port, () => {
-  //   console.log(`Server running on port http://localhost:${port}/`);
-  // });
-  const port = parseInt(process.env.PORT || "3000", 10);
-  const host = process.env.HOST || '0.0.0.0';
+  const defaultPort = 3000;
+  const defaultHost = '0.0.0.0';
+
+  const port = parseInt(process.env.PORT ?? `${defaultPort}`, 10);
+  const host = process.env.HOST || defaultHost;
+
   app.listen(port, host, () => {
-    console.log(`Server running on port http://0.0.0.0:${port}/`);
+    console.log(`Server running on port http://${host}:${port}/`);
   });
 } catch (error) {
   console.error("Error setting up the server:", error);
