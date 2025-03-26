@@ -11,9 +11,12 @@ import dotenv from 'dotenv';
 //   },
 //   define: { global: "globalThis", 'import.meta.env.VITE_APP_API_BASE_URL': JSON.stringify(process.env.VITE_APP_API_BASE_URL) }
 // });
+dotenv.config(); // Load .env file
+
+console.log("process.env:", process.env);
+console.log("VITE_APP_API_BASE_URL:", process.env.VITE_APP_API_BASE_URL);
 
 export default defineConfig(({ mode }) => {
-  // Load environment variables
   // Load environment variables manually
   dotenv.config();
 
