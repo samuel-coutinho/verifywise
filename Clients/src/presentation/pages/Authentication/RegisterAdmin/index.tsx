@@ -40,6 +40,8 @@ const RegisterAdmin: React.FC = () => {
   // State for form errors
   const [errors, setErrors] = useState<FormErrors>({});
 
+  console.log("Backend API URL:", import.meta.env.VITE_APP_API_BASE_URL)
+
   //state for overlay modal
   const [isSubmitting, setIsSubmitting] = useState(false);
 
