@@ -20,6 +20,9 @@ export default defineConfig(({ mode }) => {
   // Load environment variables manually
   dotenv.config();
 
+  console.log("process.env:", process.env);
+  console.log("VITE_APP_API_BASE_URL:", process.env.VITE_APP_API_BASE_URL);
+
   return {
     plugins: [react(), svgr()],
     server: {

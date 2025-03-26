@@ -34,7 +34,6 @@ import ComplianceTracker from "./presentation/pages/ComplianceTracker/1.0Complia
 import VWHome from "./presentation/pages/Home/1.0Home";
 import VWProjectView from "./presentation/pages/ProjectView/V1.0ProjectView";
 import { Project } from "./domain/Project";
-import dotenv from 'dotenv';
 
 function App() {
   const mode = useSelector((state: any) => state.ui?.mode || "light");
@@ -44,12 +43,6 @@ function App() {
   console.log("Backend API URL:", import.meta.env.VITE_APP_API_BASE_URL || process.env.VITE_APP_API_BASE_URL);
 
   console.log("import.meta.env:", import.meta.env)
-
-  dotenv.config(); // Load .env file
-
-console.log("process.env:", process.env);
-console.log("VITE_APP_API_BASE_URL:", process.env.VITE_APP_API_BASE_URL);
-
 
   const [uiValues, setUiValues] = useState<unknown | undefined>({}); // responsible for things like: Sidebar, light/dark mode, etc.
   const [authValues, setAuthValues] = useState<unknown | undefined>({}); // for user authentication
