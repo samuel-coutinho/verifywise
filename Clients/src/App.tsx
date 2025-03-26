@@ -40,6 +40,8 @@ function App() {
   const token = useSelector(
     (state: { auth: { authToken: string } }) => state.auth.authToken
   );
+  console.log("Backend API URL:", import.meta.env.VITE_APP_API_BASE_URL)
+  console.log("import.meta.env:", import.meta.env)
 
   const [uiValues, setUiValues] = useState<unknown | undefined>({}); // responsible for things like: Sidebar, light/dark mode, etc.
   const [authValues, setAuthValues] = useState<unknown | undefined>({}); // for user authentication
