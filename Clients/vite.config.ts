@@ -29,7 +29,7 @@ export default defineConfig(({ mode }) => {
       host: "0.0.0.0",
     },
     define: {
-      'import.meta.env.VITE_APP_API_BASE_URL': JSON.stringify(process.env.VITE_APP_API_BASE_URL),
+      'import.meta.env.VITE_APP_API_BASE_URL': JSON.stringify("https://verifywise.onrender.com"),
     },
   };
 });
