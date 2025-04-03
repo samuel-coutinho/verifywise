@@ -35,12 +35,16 @@ import VWHome from "./presentation/pages/Home/1.0Home";
 import VWProjectView from "./presentation/pages/ProjectView/V1.0ProjectView";
 import { Project } from "./domain/Project";
 import PageNotFound from "./presentation/pages/PageNotFound";
+import { API_URL, API_URL_P } from "../env.vars";
 
 function App() {
   const mode = useSelector((state: any) => state.ui?.mode || "light");
   const token = useSelector(
     (state: { auth: { authToken: string } }) => state.auth.authToken
   );
+
+  console.log("API_URL:", API_URL);
+  console.log("API_URL_P:", API_URL_P);
 
   const [uiValues, setUiValues] = useState<unknown | undefined>({}); // responsible for things like: Sidebar, light/dark mode, etc.
   const [authValues, setAuthValues] = useState<unknown | undefined>({}); // for user authentication
