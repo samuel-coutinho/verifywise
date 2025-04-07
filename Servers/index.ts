@@ -48,11 +48,15 @@ try {
   //   await sequelize.sync();
   // })();
 
+  const corsOrigins = [
+    `${process.env.FRONTEND_HOST}:${process.env.FRONTEND_PORT}`,
+  ]
+
+  console.log('corsOrigins', corsOrigins);
+
   app.use(
     cors({
-      origin: [
-        `${process.env.FRONTEND_PORT}:${process.env.FRONTEND_PORT}`,
-      ],
+      origin: corsOrigins,
       credentials: true,
     })
   );
