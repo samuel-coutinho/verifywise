@@ -1,7 +1,8 @@
 #!/bin/sh
 
 echo "Running database migrations..."
-npm run migrate-db
+npx sequelize db:migrate
 
 echo "Starting server..."
-node dist/index.js
+exec node dist/index.js
+
