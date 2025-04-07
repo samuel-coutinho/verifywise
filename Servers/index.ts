@@ -50,7 +50,9 @@ try {
 
   app.use(
     cors({
-      origin: [`${process.env.FRONTEND_HOST}`],
+      origin: [
+        `${process.env.FRONTEND_PORT}:${process.env.FRONTEND_PORT}`,
+      ],
       credentials: true,
     })
   );
