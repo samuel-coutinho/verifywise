@@ -48,8 +48,15 @@ try {
   //   await sequelize.sync();
   // })();
 
+  const DEFAULT_HOST = "localhost";
+  const DEFAULT_PORT = null;
+
+  const host = process.env.FRONTEND_HOST || DEFAULT_HOST;
+  const portString = process.env.FRONTEND_PORT || DEFAULT_PORT;
+//  const port = parseInt(portString, 10); // Convert to number
+
   const corsOrigins = [
-    `${process.env.FRONTEND_HOST}:${process.env.FRONTEND_PORT}`,
+    `${host}:${port}`,
   ]
 
   console.log('corsOrigins', corsOrigins);
