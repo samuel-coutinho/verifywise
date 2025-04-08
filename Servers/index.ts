@@ -24,6 +24,7 @@ import controlCategory from "./routes/controlCategory.route";
 import autoDriverRoutes from "./routes/autoDriver.route";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
+import parseOrigins from "./utils/parseOrigins";
 
 const swaggerDoc = YAML.load("./swagger.yaml");
 
@@ -37,6 +38,10 @@ const host = process.env.HOST || DEFAULT_HOST;
 
 const port = parseInt(portString, 10); // Convert to number
 
+const DEFAULT_FRONTEND_URL = "http://localhost:8082";
+
+const frontEndUrl = process.env.FRONTEND_URL || DEFAULT_FRONTEND_URL;
+
 try {
   // (async () => {
   //   await checkAndCreateTables();
@@ -48,15 +53,17 @@ try {
   //   await sequelize.sync();
   // })();
 
-  const DEFAULT_FRONTEND_URL = "http://localhost:8080";
-
-
-  const frontEndUrl = process.env.FRONTEND_URL || DEFAULT_FRONTEND_URL;
-
+  const allowedOrigins = parseOrigins(frontEndUrl);
 
   app.use(
     cors({
-      origin: frontEndUrl,
+      origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
       credentials: true,
     })
   );
