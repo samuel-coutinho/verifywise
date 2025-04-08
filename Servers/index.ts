@@ -48,22 +48,15 @@ try {
   //   await sequelize.sync();
   // })();
 
-  const DEFAULT_FRONTEND_HOST = "localhost";
-  const DEFAULT_FRONTEND_PORT = 8080;
+  const DEFAULT_FRONTEND_URL = "http://localhost:8080";
 
-  const host = process.env.FRONTEND_HOST || DEFAULT_FRONTEND_HOST;
-  const port = process.env.FRONTEND_PORT || DEFAULT_FRONTEND_PORT;
-//  const port = parseInt(portString, 10); // Convert to number
 
-  const corsOrigins = [
-    `${host}:${port}`,
-  ]
+  const frontEndUrl = process.env.FRONTEND_URL || DEFAULT_FRONTEND_URL;
 
-  console.log('corsOrigins', corsOrigins);
 
   app.use(
     cors({
-      origin: corsOrigins,
+      origin: frontEndUrl,
       credentials: true,
     })
   );
