@@ -29,6 +29,101 @@ import { AssessmentModel } from "../models/assessment.model";
 import { ControlModel } from "../models/control.model";
 import { ControlCategoryModel } from "../models/controlCategory.model";
 
+// export async function getAllProjects(
+//   req: Request,
+//   res: Response
+// ): Promise<any> {
+//   try {
+//     const projects = (await getAllProjectsQuery()) as ProjectModel[];
+
+//     if (projects && projects.length > 0) {
+//       for (const project of projects) {
+//         // calculating compliances
+//         const controlCategories = await getControlCategoryByProjectIdQuery(
+//           project.id!
+//         );
+//         for (const category of controlCategories) {
+//           if (category) {
+//             const controls = await getAllControlsByControlGroupQuery(
+//               category.id
+//             );
+//             for (const control of controls) {
+//               if (control && control.id) {
+//                 const subControls = await getAllSubcontrolsByControlIdQuery(
+//                   control.id
+//                 );
+//                 control.numberOfSubcontrols = subControls.length;
+//                 control.numberOfDoneSubcontrols = subControls.filter(
+//                   (subControl) => subControl.status === "Done"
+//                 ).length;
+//                 project.dataValues.totalSubcontrols =
+//                   (project.dataValues.totalSubcontrols || 0) +
+//                   subControls.length;
+//                 project.dataValues.doneSubcontrols =
+//                   (project.dataValues.doneSubcontrols || 0) +
+//                   control.numberOfDoneSubcontrols;
+//               }
+//             }
+//           }
+//         }
+
+//         // calculating assessments
+
+//         const assessments = (await getAssessmentByProjectIdQuery(
+//           project.id!
+//         )) as AssessmentModel[];
+//         if (assessments.length !== 0) {
+//           for (const assessment of assessments) {
+//             if (assessment.id !== undefined) {
+//               const topics = await getTopicByAssessmentIdQuery(assessment.id);
+//               if (topics.length !== 0) {
+//                 for (const topic of topics) {
+//                   if (topic.id !== undefined) {
+//                     const subtopics = await getSubTopicByTopicIdQuery(topic.id);
+//                     if (subtopics.length !== 0) {
+//                       for (const subtopic of subtopics) {
+//                         if (subtopic.id !== undefined) {
+//                           const questions = await getQuestionBySubTopicIdQuery(
+//                             subtopic.id
+//                           );
+//                           if (questions && questions.length > 0) {
+//                             project.dataValues.totalAssessments =
+//                               (project.dataValues.totalAssessments || 0) +
+//                               questions.length;
+
+//                             project.dataValues.answeredAssessments =
+//                               (project.dataValues.answeredAssessments || 0) +
+//                               questions.filter(
+//                                 (q) =>
+//                                   q.answer?.trim().length !== 0 &&
+//                                   q.answer !== null &&
+//                                   q.answer !== undefined
+//                               ).length;
+//                           }
+//                         }
+//                       }
+//                     }
+//                   }
+//                 }
+//               }
+//             }
+//           }
+//         }
+//       }
+//       return res.status(200).json(STATUS_CODE[200](projects));
+//     }
+
+//     return res.status(204).json(STATUS_CODE[204](projects));
+//   } catch (error) {
+//     return res.status(500).json(STATUS_CODE[500]((error as Error).message));
+//   }
+// }
+
+
+//******************************************************************* */
+/**
+ * Get all projects with their compliance and assessment statistics
+ */
 export async function getAllProjects(
   req: Request,
   res: Response
@@ -37,79 +132,17 @@ export async function getAllProjects(
     const projects = (await getAllProjectsQuery()) as ProjectModel[];
 
     if (projects && projects.length > 0) {
-      for (const project of projects) {
-        // calculating compliances
-        const controlCategories = await getControlCategoryByProjectIdQuery(
-          project.id!
-        );
-        for (const category of controlCategories) {
-          if (category) {
-            const controls = await getAllControlsByControlGroupQuery(
-              category.id
-            );
-            for (const control of controls) {
-              if (control && control.id) {
-                const subControls = await getAllSubcontrolsByControlIdQuery(
-                  control.id
-                );
-                control.numberOfSubcontrols = subControls.length;
-                control.numberOfDoneSubcontrols = subControls.filter(
-                  (subControl) => subControl.status === "Done"
-                ).length;
-                project.dataValues.totalSubcontrols =
-                  (project.dataValues.totalSubcontrols || 0) +
-                  subControls.length;
-                project.dataValues.doneSubcontrols =
-                  (project.dataValues.doneSubcontrols || 0) +
-                  control.numberOfDoneSubcontrols;
-              }
-            }
-          }
-        }
-
-        // calculating assessments
-
-        const assessments = (await getAssessmentByProjectIdQuery(
-          project.id!
-        )) as AssessmentModel[];
-        if (assessments.length !== 0) {
-          for (const assessment of assessments) {
-            if (assessment.id !== undefined) {
-              const topics = await getTopicByAssessmentIdQuery(assessment.id);
-              if (topics.length !== 0) {
-                for (const topic of topics) {
-                  if (topic.id !== undefined) {
-                    const subtopics = await getSubTopicByTopicIdQuery(topic.id);
-                    if (subtopics.length !== 0) {
-                      for (const subtopic of subtopics) {
-                        if (subtopic.id !== undefined) {
-                          const questions = await getQuestionBySubTopicIdQuery(
-                            subtopic.id
-                          );
-                          if (questions && questions.length > 0) {
-                            project.dataValues.totalAssessments =
-                              (project.dataValues.totalAssessments || 0) +
-                              questions.length;
-
-                            project.dataValues.answeredAssessments =
-                              (project.dataValues.answeredAssessments || 0) +
-                              questions.filter(
-                                (q) =>
-                                  q.answer?.trim().length !== 0 &&
-                                  q.answer !== null &&
-                                  q.answer !== undefined
-                              ).length;
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+      // Process all projects in parallel for better performance
+      await Promise.all(
+        projects.map(async (project) => {
+          // Calculate compliance statistics
+          await calculateProjectComplianceStats(project);
+          
+          // Calculate assessment statistics
+          await calculateProjectAssessmentStats(project);
+        })
+      );
+      
       return res.status(200).json(STATUS_CODE[200](projects));
     }
 
@@ -118,6 +151,78 @@ export async function getAllProjects(
     return res.status(500).json(STATUS_CODE[500]((error as Error).message));
   }
 }
+
+/**
+ * Calculate compliance statistics for a project
+ */
+async function calculateProjectComplianceStats(project: ProjectModel): Promise<void> {
+  // Initialize counters if they don't exist
+  project.dataValues.totalSubcontrols = 0;
+  project.dataValues.doneSubcontrols = 0;
+  
+  const controlCategories = await getControlCategoryByProjectIdQuery(project.id!);
+  
+  for (const category of controlCategories) {
+    if (!category) continue;
+    
+    const controls = await getAllControlsByControlGroupQuery(category.id);
+    
+    for (const control of controls) {
+      if (!control || !control.id) continue;
+      
+      const subControls = await getAllSubcontrolsByControlIdQuery(control.id);
+      const doneSubControls = subControls.filter(
+        (subControl) => subControl.status === "Done"
+      ).length;
+      
+      // Set control statistics
+      control.numberOfSubcontrols = subControls.length;
+      control.numberOfDoneSubcontrols = doneSubControls;
+      
+      // Update project totals
+      project.dataValues.totalSubcontrols += subControls.length;
+      project.dataValues.doneSubcontrols += doneSubControls;
+    }
+  }
+}
+
+/**
+ * Calculate assessment statistics for a project
+ */
+async function calculateProjectAssessmentStats(project: ProjectModel): Promise<void> {
+  // Initialize counters if they don't exist
+  project.dataValues.totalAssessments = 0;
+  project.dataValues.answeredAssessments = 0;
+  
+  const assessments = (await getAssessmentByProjectIdQuery(project.id!)) as AssessmentModel[];
+  
+  for (const assessment of assessments) {
+    if (assessment.id === undefined) continue;
+    
+    const topics = await getTopicByAssessmentIdQuery(assessment.id);
+    
+    for (const topic of topics) {
+      if (topic.id === undefined) continue;
+      
+      const subtopics = await getSubTopicByTopicIdQuery(topic.id);
+      
+      for (const subtopic of subtopics) {
+        if (subtopic.id === undefined) continue;
+        
+        const questions = await getQuestionBySubTopicIdQuery(subtopic.id);
+        
+        if (questions && questions.length > 0) {
+          // Update assessment totals
+          project.dataValues.totalAssessments += questions.length;
+          project.dataValues.answeredAssessments += questions.filter(
+            (q) => q.answer?.trim?.() && q.answer !== null && q.answer !== undefined
+          ).length;
+        }
+      }
+    }
+  }
+}
+
 
 export async function getProjectById(
   req: Request,
