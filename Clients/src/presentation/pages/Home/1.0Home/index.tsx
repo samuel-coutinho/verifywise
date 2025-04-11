@@ -19,10 +19,11 @@ import { logEngine } from "../../../../application/tools/log.engine";
 import VWProjectForm from "../../../vw-v2-components/Forms/ProjectForm";
 
 const VWHome = () => {
-  const { setDashboardValues } = useContext(VerifyWiseContext);
+  const { setDashboardValues, projects } = useContext(VerifyWiseContext);
   const [complianceProgress, setComplianceProgress] = useState<any>({});
   const [assessmentProgress, setAssessmentProgress] = useState<any>({});
-  const [projects, setProjects] = useState<any[]>([]);
+//  const [projects, setProjects] = useState<any[]>([]);
+  
   const [_, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [__, setIsGeneratingDemoData] = useState(false);
@@ -58,7 +59,7 @@ const VWHome = () => {
         "/projects/all/assessment/progress",
         setAssessmentProgress
       );
-      await fetchData("/projects", setProjects);
+   //   await fetchData("/projects", setProjects);
       setLoading(false);
     };
 
@@ -96,7 +97,7 @@ const VWHome = () => {
         }, 3000);
 
         // Fetch the updated data
-        await fetchData("/projects", setProjects);
+      //  await fetchData("/projects", setProjects);
         await fetchData(
           "/projects/all/compliance/progress",
           setComplianceProgress
