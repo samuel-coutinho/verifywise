@@ -24,7 +24,7 @@ import controlCategory from "./routes/controlCategory.route";
 import autoDriverRoutes from "./routes/autoDriver.route";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
-import parseOrigins from "./utils/parseOrigins";
+import { parseOrigins, testOrigin } from "./utils/parseOrigins";
 
 const swaggerDoc = YAML.load("./swagger.yaml");
 
@@ -58,11 +58,7 @@ try {
   app.use(
     cors({
       origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
-          callback(null, true);
-        } else {
-          callback(new Error("Not allowed by CORS"));
-        }
+        testOrigin({origin, allowedOrigins , callback});
       },
       credentials: true,
     })

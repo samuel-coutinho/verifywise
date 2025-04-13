@@ -30,4 +30,35 @@ const parseOrigins: ParseOrigins = (raw) => {
     return raw.split(",").map((origin: string) => origin.trim());
 };
 
-export default parseOrigins;
+/**
+ * Tests whether a given origin is allowed based on a list of allowed origins.
+ *
+ * @param {Object} params - The parameters for testing the origin.
+ * @param {string | undefined} params.origin - The origin to be tested. If undefined, it is considered allowed.
+ * @param {string[]} params.allowedOrigins - An array of allowed origins to validate against.
+ * @param {(error: Error | null, success: boolean) => void} params.callback - A callback function to handle the result.
+ *        - If the origin is allowed, the callback is invoked with `null` as the error and `true` as the success flag.
+ *        - If the origin is not allowed, the callback is invoked with an `Error` object and no success flag.
+ */
+
+interface TestOriginCallback {
+    (err: Error | null, allow?: boolean): void;
+}
+
+interface AllowedOrigins {
+    includes(origin: string): boolean;
+}
+
+interface TestOrigin {
+    origin: string | undefined, allowedOrigins: AllowedOrigins, callback: TestOriginCallback;
+}
+
+const testOrigin = ({origin, allowedOrigins, callback}: TestOrigin): void => {
+    if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+    } else {
+        callback(new Error("Not allowed by CORS"));
+    }
+};
+
+export {parseOrigins, testOrigin};
