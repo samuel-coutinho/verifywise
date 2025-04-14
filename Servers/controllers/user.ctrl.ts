@@ -123,7 +123,7 @@ async function loginUser(req: Request, res: Response): Promise<any> {
         const refreshToken = generateRefreshToken(
           { id: user!.id, email: email }
         );
-        console.log("process.env.NODE_ENV = ", process.env.NODE_ENV);
+        console.log("process.env = ", process.env);
         res.cookie("refresh_token", refreshToken, {
           httpOnly: true,
           path: "/users/refresh-token",
