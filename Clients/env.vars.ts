@@ -1,3 +1,3 @@
 export const ENV_VARs = {
-  URL: "https://verifywise.onrender.com",
+  URL: import.meta.env.VITE_APP_API_BASE_URL,
 };
