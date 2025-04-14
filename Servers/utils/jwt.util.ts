@@ -33,8 +33,8 @@ const generateToken = (payload: Object) => {
   try {
     return Jwt.sign(
       {
-        ...payload,
-        expire: Date.now() + 1 * 60 * 1000,
+      ...payload,
+      expire: new Date(Date.now() + 1 * 60 * 1000).toLocaleString("en-US", { timeZone: "America/New_York" }),
       },
       process.env.JWT_SECRET as string
     );
