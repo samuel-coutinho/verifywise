@@ -30,11 +30,13 @@ const getRefreshTokenPayload = (token: any): any => {
  * @returns generated token
  */
 const generateToken = (payload: Object) => {
+  const date = Date.now() + 60 * 1000
+  console.log("Date.now() + 60 * 1000", date.toLocaleString());
   try {
     return Jwt.sign(
       {
         ...payload,
-        expire: Date.now(),
+        expire: Date.now() + 60 * 1000,
       },
       process.env.JWT_SECRET as string
     );
