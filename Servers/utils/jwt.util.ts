@@ -34,7 +34,7 @@ const generateToken = (payload: Object) => {
     return Jwt.sign(
       {
         ...payload,
-        expire: Date.now() + 1 * 3600 * 1000,
+        expire: Date.now() + 1 * 60 * 1000,
       },
       process.env.JWT_SECRET as string
     );
