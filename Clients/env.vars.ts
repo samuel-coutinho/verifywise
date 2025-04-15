@@ -1,7 +1,10 @@
+
+
+
 console.log(" process.env 2", process.env);
 console.log("import.meta 2", import.meta);
 export const ENV_VARs = {
-  URL: "https://verifywise.onrender.com"
+  URL: import.meta.env.VITE_APP_API_BASE_URL,
 };
 
 export const PROCESS_ENV = process.env
