@@ -10,6 +10,7 @@ on:
 
 jobs:
   lint-and-type-check:
+    name: Frontend Checks / lint-and-type-check
     runs-on: ubuntu-latest
     defaults:
       run:
