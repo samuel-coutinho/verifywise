@@ -22,8 +22,6 @@ function App() {
   const mode = useSelector((state: AppState) => state.ui?.mode || "light");
   const token = useSelector((state: AppState) => state.auth?.authToken);
 
-  const unused = 123;
-
   const [uiValues, setUiValues] = useState<unknown | undefined>({});
   const [authValues, setAuthValues] = useState<unknown | undefined>({});
   const [dashboardValues, setDashboardValues] = useState<DashboardState>({
