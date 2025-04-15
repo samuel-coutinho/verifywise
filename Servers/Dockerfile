@@ -1,16 +1,20 @@
 FROM node:20-alpine
 
 WORKDIR /app
-COPY ./package.json ./
+
+COPY package*.json ./
 RUN npm install
 
-COPY ./ ./
-COPY ./SQL_Commands.sql ./SQL_Commands.sql
+COPY . .
 
 RUN npm run build
 
+# Copy templates if needed
 COPY ./templates ./dist/templates
+
+# Make sure the start.sh is executable
+RUN chmod +x start.sh
 
 EXPOSE 3000
 
-CMD ["npm", "start"]
+CMD ["./start.sh"]

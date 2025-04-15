@@ -17,12 +17,11 @@ import { CookiesProvider } from "react-cookie";
 import { createRoutes } from "./application/config/routes";
 import { DashboardState } from "./application/interfaces/appStates";
 import { AppState } from "./application/interfaces/appStates";
+import { IMPORT_META_ENV, PROCESS_ENV } from "../env.vars";
 
 function App() {
   const mode = useSelector((state: AppState) => state.ui?.mode || "light");
   const token = useSelector((state: AppState) => state.auth?.authToken);
-
-  const unused = 123;
 
   const [uiValues, setUiValues] = useState<unknown | undefined>({});
   const [authValues, setAuthValues] = useState<unknown | undefined>({});

@@ -123,9 +123,12 @@ async function loginUser(req: Request, res: Response): Promise<any> {
         const refreshToken = generateRefreshToken(
           { id: user!.id, email: email }
         );
+        console.log("process.env = ", process.env);
         res.cookie("refresh_token", refreshToken, {
           httpOnly: true,
-          path: "/users",
+          path: "/users/refresh-token",
+          secure: true,
+          sameSite: "none",
           expires: new Date(Date.now() + 1 * 3600 * 1000 * 24 * 30), // 30 days
         });
         return res.status(202).json(
