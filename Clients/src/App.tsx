@@ -17,10 +17,15 @@ import { CookiesProvider } from "react-cookie";
 import { createRoutes } from "./application/config/routes";
 import { DashboardState } from "./application/interfaces/appStates";
 import { AppState } from "./application/interfaces/appStates";
+import { IMPORT_META_ENV, PROCESS_ENV } from "../env.vars";
 
 function App() {
   const mode = useSelector((state: AppState) => state.ui?.mode || "light");
   const token = useSelector((state: AppState) => state.auth?.authToken);
+
+
+  console.log("PROCESS_ENV = ", PROCESS_ENV);
+console.log("IMPORT_META_ENV = ", IMPORT_META_ENV);
 
   const [uiValues, setUiValues] = useState<unknown | undefined>({});
   const [authValues, setAuthValues] = useState<unknown | undefined>({});
