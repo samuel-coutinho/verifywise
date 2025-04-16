@@ -4,7 +4,6 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker as MuiDatePicker } from "@mui/x-date-pickers/DatePicker";
 import "./index.css";
 import dayjs, { Dayjs } from "dayjs";
-import calendarIcon from '/src/presentation/assets/icons/calendar.svg';
 
 interface DatePickerProps {
   label?: string;
@@ -98,7 +97,7 @@ const DatePicker = ({
               height: "20px",
             },
             "& button:before": {
-              content: `url('${calendarIcon}')`,
+              content: `url('/assets/icons/calendar.svg')`,
               display: "block",
               position: "absolute",
               top: 0,
