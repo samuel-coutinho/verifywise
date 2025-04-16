@@ -13,6 +13,7 @@ import {
   getQuestionByTopicIdQuery,
 } from "../utils/question.utils";
 import { Question } from "../models/question.model";
+import { updateProjectUpdatedByIdQuery } from "../utils/project.utils";
 
 export async function getAllQuestions(
   req: Request,
@@ -93,23 +94,17 @@ export async function updateQuestionById(
     const questionId = parseInt(req.params.id);
     const body: { answer: string } = req.body;
 
-    if (!body.answer
-    ) {
-      return res.status(400).json(
-        STATUS_CODE[400]({
-          message: "No values provided for answer for the Question",
-        })
-      );
-    }
-
     const question = (await updateQuestionByIdQuery(
       questionId,
-      body.answer,
+      body.answer || "",
     )) as Question;
 
     if (!question) {
       return res.status(404).json(STATUS_CODE[404]({}));
     }
+
+    // Update the project's last updated date
+    await updateProjectUpdatedByIdQuery(questionId, "questions");
 
     return res.status(202).json(STATUS_CODE[202](question));
   } catch (error) {
@@ -166,7 +161,7 @@ export async function getQuestionsByTopicId(req: Request, res: Response) {
     if (isNaN(topicId)) {
       return res
         .status(400)
-        .json(STATUS_CODE[400]({ message: "Invalid subtopic ID" }));
+        .json(STATUS_CODE[400]({ message: "Invalid topic ID" }));
     }
 
     const questions = await getQuestionByTopicIdQuery(topicId);

@@ -3,7 +3,6 @@ import { Box, Stack, Tab, Typography, useTheme } from "@mui/material";
 import TableWithPlaceholder from "../../components/Table/WithPlaceholder/index";
 import RiskTable from "../../components/Table/RisksTable";
 import { Suspense, useCallback, useContext, useEffect, useState } from "react";
-
 import AddNewVendor from "../../components/Modals/NewVendor";
 import singleTheme from "../../themes/v1SingleTheme";
 import { VerifyWiseContext } from "../../../application/contexts/VerifyWise.context";
@@ -16,21 +15,20 @@ import { tabPanelStyle, tabStyle } from "./style";
 import { logEngine } from "../../../application/tools/log.engine";
 import Alert from "../../components/Alert";
 import PageTour from "../../components/PageTour";
-import CustomStep from "../../components/PageTour/CustomStep";
+import VendorsSteps from "./VendorsSteps";
+import useMultipleOnScreen from "../../../application/hooks/useMultipleOnScreen";
 import TabContext from "@mui/lab/TabContext";
 import TabList from "@mui/lab/TabList";
 import TabPanel from "@mui/lab/TabPanel";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import { User } from "../../../domain/User";
-import { getUserForLogging } from "../../../application/tools/userHelpers";
 import AddNewRisk from "../../components/Modals/NewRisk";
 import VWButton from "../../vw-v2-components/Buttons";
 import VWSkeleton from "../../vw-v2-components/Skeletons";
 import VWToast from "../../vw-v2-components/Toast";
-import useProjectRisks from "../../../application/hooks/useProjectRisks";
 import { Project } from "../../../domain/Project";
 import RisksCard from "../../components/Cards/RisksCard";
 import { vwhomeHeading } from "../Home/1.0Home/style";
+import useVendorRisks from "../../../application/hooks/useVendorRisks";
 
 interface ExistingRisk {
   id?: number;
@@ -74,25 +72,32 @@ const Vendors = () => {
     null
   );
   const [selectedRisk, setSelectedRisk] = useState<ExistingRisk | null>(null);
+  const [controller, setController] = useState<AbortController | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const { selectedProjectId } = dashboardValues;
-  const { projectRisksSummary } = useProjectRisks({
+  const { vendorRisksSummary } = useVendorRisks({
     projectId: selectedProjectId?.toString(),
+    refreshKey,
   });
   const [alert, setAlert] = useState<{
     variant: "success" | "info" | "warning" | "error";
     title?: string;
     body: string;
   } | null>(null);
-  const [runVendorTour, setRunVendorTour] = useState(false);
-  const vendorSteps = [
-    {
-      target: '[data-joyride-id="add-new-vendor"]',
-      content: (
-        <CustomStep body="Here, you can add AI providers that you use in our project, and input the necessary information to ensure compliance." />
-      ),
-    },
-  ];
 
+  const [runVendorTour, setRunVendorTour] = useState(false);
+  const { refs, allVisible } = useMultipleOnScreen<HTMLDivElement>({
+    countToTrigger: 1,
+  });
+
+  const createAbortController = () => {
+    if (controller) {
+      controller.abort();
+    }
+    const newController = new AbortController();
+    setController(newController);
+    return newController.signal;
+  };
   const openAddNewVendor = () => {
     setIsOpen(true);
   };
@@ -121,55 +126,77 @@ const Vendors = () => {
   }, [selectedProjectId]);
 
   const fetchVendors = useCallback(async () => {
+    const signal = createAbortController();
+    if (signal.aborted) return;
     setIsVendorsLoading(true);
+    if (!selectedProjectId) return;
     try {
       const response = await getAllEntities({
         routeUrl: `/vendors/project-id/${selectedProjectId}`,
+        signal,
       });
-      setDashboardValues((prevValues: any) => ({
-        ...prevValues,
-        vendors: response.data,
-      }));
-      setIsVendorsLoading(false);
+      if (response?.data) {
+        setDashboardValues((prevValues: any) => ({
+          ...prevValues,
+          vendors: response.data,
+        }));
+        setRefreshKey((prevKey) => prevKey + 1);
+      }
     } catch (error) {
       console.error("Error fetching vendors:", error);
+    } finally {
+      setIsVendorsLoading(false);
     }
   }, [selectedProjectId]);
 
   const fetchRisks = useCallback(async () => {
+    const signal = createAbortController();
+    if (signal.aborted) return;
     setIsRisksLoading(true);
+    if (!selectedProjectId) return;
     try {
       const response = await getAllEntities({
         routeUrl: `/vendorRisks/by-projid/${selectedProjectId}`,
+        signal,
       });
-      setDashboardValues((prevValues: any) => ({
-        ...prevValues,
-        vendorRisks: response.data,
-      }));
-      setIsRisksLoading(false);
+      if (response?.data) {
+        setDashboardValues((prevValues: any) => ({
+          ...prevValues,
+          vendorRisks: response.data,
+          selectedProjectId: selectedProjectId,
+        }));
+        setRefreshKey((prevKey) => prevKey + 1);
+      }
     } catch (error) {
       console.error("Error fetching vendorRisks:", error);
+    } finally {
+      setIsRisksLoading(false);
     }
   }, [selectedProjectId]);
 
   useEffect(() => {
     fetchVendors();
-    setRunVendorTour(true);
+    return () => {
+      controller?.abort();
+    };
   }, [selectedProjectId]);
 
   useEffect(() => {
-    if (!selectedProjectId) return;
     fetchRisks();
+    return () => {
+      controller?.abort();
+    };
   }, [selectedProjectId]);
+
+  useEffect(() => {
+    if (allVisible) {
+      setRunVendorTour(true);
+    }
+  }, [allVisible]);
 
   const handleDeleteVendor = async (vendorId: number) => {
     setIsSubmitting(true);
-    const user: User = {
-      id: Number(localStorage.getItem("userId")) || -1,
-      email: "N/A",
-      name: "N/A",
-      surname: "N/A",
-    };
+
     try {
       const response = await deleteEntityById({
         routeUrl: `/vendors/${vendorId}`,
@@ -189,7 +216,7 @@ const Vendors = () => {
         setTimeout(() => {
           setAlert(null);
         }, 3000);
-        fetchVendors();
+        await fetchVendors();
       } else if (response.status === 404) {
         setAlert({
           variant: "error",
@@ -203,7 +230,6 @@ const Vendors = () => {
         logEngine({
           type: "error",
           message: "Unexpected response. Please try again.",
-          user: getUserForLogging(user),
         });
       }
     } catch (error) {
@@ -211,23 +237,19 @@ const Vendors = () => {
       logEngine({
         type: "error",
         message: `An error occurred: ${error}`,
-        user: getUserForLogging(user),
       });
     } finally {
       setIsSubmitting(false);
     }
   };
   const handleDeleteRisk = async (vendorId: number) => {
+    const signal = createAbortController();
     setIsSubmitting(true);
-    const user: User = {
-      id: Number(localStorage.getItem("userId")) || -1,
-      email: "N/A",
-      name: "N/A",
-      surname: "N/A",
-    };
+
     try {
       const response = await deleteEntityById({
         routeUrl: `/vendorRisks/${vendorId}`,
+        signal,
       });
 
       if (response.status === 202) {
@@ -238,7 +260,8 @@ const Vendors = () => {
         setTimeout(() => {
           setAlert(null);
         }, 3000);
-        fetchRisks();
+
+        await fetchRisks();
       } else if (response.status === 404) {
         setAlert({
           variant: "error",
@@ -249,7 +272,6 @@ const Vendors = () => {
         logEngine({
           type: "error",
           message: "Unexpected response. Please try again.",
-          user: getUserForLogging(user),
         });
       }
     } catch (error) {
@@ -257,7 +279,6 @@ const Vendors = () => {
       logEngine({
         type: "error",
         message: `An error occurred: ${error}`,
-        user: getUserForLogging(user),
       });
     } finally {
       setIsSubmitting(false);
@@ -274,12 +295,6 @@ const Vendors = () => {
       logEngine({
         type: "error",
         message: "Failed to update risk data.",
-        user: {
-          id: String(localStorage.getItem("userId")) || "N/A",
-          email: "N/A",
-          firstname: "N/A",
-          lastname: "N/A",
-        },
       });
     }
   };
@@ -294,12 +309,6 @@ const Vendors = () => {
       logEngine({
         type: "error",
         message: "Failed to fetch vendor data.",
-        user: {
-          id: String(localStorage.getItem("userId")) || "N/A",
-          email: "N/A",
-          firstname: "N/A",
-          lastname: "N/A",
-        },
       });
     }
   };
@@ -307,9 +316,13 @@ const Vendors = () => {
   return (
     <div className="vendors-page">
       <PageTour
-        steps={vendorSteps}
+        steps={VendorsSteps}
         run={runVendorTour}
-        onFinish={() => setRunVendorTour(false)}
+        onFinish={() => {
+          localStorage.setItem("vendor-tour", "true");
+          setRunVendorTour(false);
+        }}
+        tourKey="vendor-tour"
       />
       <Stack gap={theme.spacing(10)} maxWidth={1400}>
         {value === "1" ? (
@@ -326,12 +339,7 @@ const Vendors = () => {
               </Suspense>
             )}
             <Stack>
-              <Typography
-                data-joyride-id="assessment-status"
-                sx={vwhomeHeading}
-              >
-                Vendor list
-              </Typography>
+              <Typography sx={vwhomeHeading}>Vendor list</Typography>
               <Typography sx={singleTheme.textStyles.pageDescription}>
                 This table includes a list of external entities that provides
                 AI-related products, services, or components. You can create and
@@ -355,7 +363,6 @@ const Vendors = () => {
 
             <Stack>
               <Typography
-                data-joyride-id="assessment-status"
                 variant="h2"
                 component="div"
                 sx={{
@@ -365,11 +372,11 @@ const Vendors = () => {
                   fontWeight: 600,
                 }}
               >
-                Risk list
+                Vendor risks list
               </Typography>
               <Typography sx={singleTheme.textStyles.pageDescription}>
-                This table includes a list of Risks related to a project. You
-                can create and manage all vendor risks here.
+                This table includes a list of risks related to a vendor. You can
+                create and manage all vendor risks here.
               </Typography>
             </Stack>
           </>
@@ -389,10 +396,10 @@ const Vendors = () => {
             </TabList>
           </Box>
           {value !== "1" &&
-            (isRisksLoading ? (
+            (isRisksLoading || isVendorsLoading ? (
               <VWSkeleton variant="rectangular" width="50%" height={100} />
             ) : (
-              project && <RisksCard projectRisksSummary={projectRisksSummary} />
+              project && <RisksCard risksSummary={vendorRisksSummary} />
             ))}
           {isVendorsLoading && value === "1" ? (
             <VWSkeleton
@@ -404,25 +411,27 @@ const Vendors = () => {
           ) : (
             value === "1" && (
               <Stack sx={{ alignItems: "flex-end" }}>
-                <VWButton
-                  variant="contained"
-                  text="Add new vendor"
-                  sx={{
-                    backgroundColor: "#13715B",
-                    border: "1px solid #13715B",
-                    gap: 2,
-                  }}
-                  icon={<AddCircleOutlineIcon />}
-                  onClick={() => {
-                    openAddNewVendor();
-                    setSelectedVendor(null);
-                  }}
-                />
+                <div data-joyride-id="add-new-vendor" ref={refs[0]}>
+                  <VWButton
+                    variant="contained"
+                    text="Add new vendor"
+                    sx={{
+                      backgroundColor: "#13715B",
+                      border: "1px solid #13715B",
+                      gap: 2,
+                    }}
+                    icon={<AddCircleOutlineIcon />}
+                    onClick={() => {
+                      openAddNewVendor();
+                      setSelectedVendor(null);
+                    }}
+                  />
+                </div>
               </Stack>
             )
           )}
 
-          {isRisksLoading && value !== "1" ? (
+          {(isRisksLoading || isVendorsLoading) && value !== "1" ? (
             <VWSkeleton
               variant="rectangular"
               width={"15%"}
@@ -468,7 +477,7 @@ const Vendors = () => {
               />
             </TabPanel>
           )}
-          {isRisksLoading && value !== "1" ? (
+          {(isRisksLoading || isVendorsLoading) && value !== "1" ? (
             <VWSkeleton
               height={"20vh"}
               minHeight={"20vh"}

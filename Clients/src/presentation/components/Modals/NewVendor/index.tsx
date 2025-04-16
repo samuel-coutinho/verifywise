@@ -26,12 +26,9 @@ import {
 } from "../../../../application/repository/entity.repository";
 import Alert from "../../Alert";
 import { checkStringValidation } from "../../../../application/validations/stringValidation";
-import useUsers from "../../../../application/hooks/useUsers";
 import { VerifyWiseContext } from "../../../../application/contexts/VerifyWise.context";
 import VWToast from "../../../vw-v2-components/Toast";
-import { User } from "../../../../domain/User";
 import { logEngine } from "../../../../application/tools/log.engine";
-import { getUserForLogging } from "../../../../application/tools/userHelpers";
 import VWButton from "../../../vw-v2-components/Buttons";
 import SaveIcon from "@mui/icons-material/Save";
 
@@ -126,27 +123,27 @@ const AddNewVendor: React.FC<AddNewVendorProps> = ({
   >([]);
   const { dashboardValues } = useContext(VerifyWiseContext);
   const { projects } = dashboardValues;
-  const { users } = useUsers();
 
-  const formattedUsers = users?.map((user) => ({
+  const formattedUsers = dashboardValues?.users?.map((user: any) => ({
     _id: user.id,
     name: `${user.name} ${user.surname}`,
   }));
-  const user: User = {
-    id: Number(localStorage.getItem("userId")) || -1,
-    email: "N/A",
-    name: "N/A",
-    surname: "N/A",
-  };
 
   const formattedProjects = useMemo(() => {
     return Array.isArray(projects)
-      ? projects.map((project: any) => ({
+      ? projects?.map((project: any) => ({
           _id: project.id,
           name: project.project_title,
         }))
       : [];
   }, [projects]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setValues(initialState);
+      setErrors({} as FormErrors);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen && !projectsLoaded) {
@@ -172,21 +169,21 @@ const AddNewVendor: React.FC<AddNewVendorProps> = ({
           vendorProvides: existingVendor.vendor_provides,
           vendorContactPerson: existingVendor.vendor_contact_person,
           reviewStatus:
-            REVIEW_STATUS_OPTIONS.find(
+            REVIEW_STATUS_OPTIONS?.find(
               (s) => s.name === existingVendor.review_status
             )?._id || "",
           reviewer:
             formattedUsers?.find(
-              (user) => user.name === existingVendor.reviewer
+              (user: any) => user._id === existingVendor.reviewer
             )?._id || "",
           reviewResult: existingVendor.review_result,
           riskStatus:
-            RISK_LEVEL_OPTIONS.find(
+            RISK_LEVEL_OPTIONS?.find(
               (s) => s.name === existingVendor.risk_status
             )?._id || 0,
           assignee:
             formattedUsers?.find(
-              (user) => user.name === existingVendor.assignee
+              (user: any) => user._id === existingVendor.assignee
             )?._id || " ",
           reviewDate: existingVendor.review_date,
         },
@@ -332,21 +329,21 @@ const AddNewVendor: React.FC<AddNewVendorProps> = ({
       projects: [values.vendorDetails.projectId],
       vendor_name: values.vendorDetails.vendorName,
       assignee: formattedUsers?.find(
-        (user) => user._id === values.vendorDetails.assignee
-      )?.name,
+        (user: any) => user._id === values.vendorDetails.assignee
+      )?._id,
       vendor_provides: values.vendorDetails.vendorProvides,
       website: values.vendorDetails.website,
       vendor_contact_person: values.vendorDetails.vendorContactPerson,
       review_result: values.vendorDetails.reviewResult,
       review_status:
-        REVIEW_STATUS_OPTIONS.find(
+        REVIEW_STATUS_OPTIONS?.find(
           (s) => s._id === values.vendorDetails.reviewStatus
         )?.name || "",
       reviewer: formattedUsers?.find(
-        (user) => user._id === values.vendorDetails.reviewer
-      )?.name,
+        (user: any) => user._id === values.vendorDetails.reviewer
+      )?._id,
       risk_status:
-        RISK_LEVEL_OPTIONS.find(
+        RISK_LEVEL_OPTIONS?.find(
           (s) => s._id === values.vendorDetails.riskStatus
         )?.name || 0,
       review_date: values.vendorDetails.reviewDate,
@@ -393,7 +390,6 @@ const AddNewVendor: React.FC<AddNewVendorProps> = ({
       logEngine({
         type: "error",
         message: "Unexpected response. Please try again.",
-        user: getUserForLogging(user),
       });
 
       setAlert({
@@ -406,6 +402,7 @@ const AddNewVendor: React.FC<AddNewVendorProps> = ({
       setTimeout(() => setAlert(null), 3000);
     } finally {
       setIsSubmitting(false);
+      setValues(initialState);
     }
   };
 
@@ -445,7 +442,6 @@ const AddNewVendor: React.FC<AddNewVendorProps> = ({
       logEngine({
         type: "error",
         message: "Unexpected response. Please try again.",
-        user: getUserForLogging(user),
       });
       setAlert({
         variant: "error",
@@ -457,6 +453,7 @@ const AddNewVendor: React.FC<AddNewVendorProps> = ({
       setTimeout(() => setAlert(null), 3000);
     } finally {
       setIsSubmitting(false);
+      setValues(initialState);
     }
   };
 
@@ -470,9 +467,10 @@ const AddNewVendor: React.FC<AddNewVendorProps> = ({
         <Field // vendorName
           label="Vendor name"
           width={220}
-          value={values.vendorDetails.vendorName}
+          value={values?.vendorDetails?.vendorName}
           onChange={(e) => handleOnChange("vendorName", e.target.value)}
           error={errors.vendorName}
+          isRequired
         />
         <Field // website
           label="Website"
@@ -480,6 +478,7 @@ const AddNewVendor: React.FC<AddNewVendorProps> = ({
           value={values.vendorDetails.website}
           onChange={(e) => handleOnChange("website", e.target.value)}
           error={errors.website}
+          isRequired
         />
         <Select // projectId
           items={projectOptions}
@@ -493,6 +492,7 @@ const AddNewVendor: React.FC<AddNewVendorProps> = ({
             width: 220,
           }}
           error={errors.projectId}
+          isRequired
         />
       </Stack>
       <Stack marginBottom={theme.spacing(8)}>
@@ -503,6 +503,7 @@ const AddNewVendor: React.FC<AddNewVendorProps> = ({
           value={values.vendorDetails.vendorProvides}
           onChange={(e) => handleOnChange("vendorProvides", e.target.value)}
           error={errors.vendorProvides}
+          isRequired
         />
       </Stack>
       <Stack
@@ -518,6 +519,7 @@ const AddNewVendor: React.FC<AddNewVendorProps> = ({
             handleOnChange("vendorContactPerson", e.target.value)
           }
           error={errors.vendorContactPerson}
+          isRequired
         />
         <Select // reviewStatus
           items={REVIEW_STATUS_OPTIONS}
@@ -531,6 +533,7 @@ const AddNewVendor: React.FC<AddNewVendorProps> = ({
             width: 220,
           }}
           error={errors.reviewStatus}
+          isRequired
         />
         <Select // reviewer
           items={formattedUsers}
@@ -544,6 +547,7 @@ const AddNewVendor: React.FC<AddNewVendorProps> = ({
           sx={{
             width: 220,
           }}
+          isRequired
         />
       </Stack>
       <Stack
@@ -559,6 +563,7 @@ const AddNewVendor: React.FC<AddNewVendorProps> = ({
           value={values.vendorDetails.reviewResult}
           error={errors.reviewResult}
           onChange={(e) => handleOnChange("reviewResult", e.target.value)}
+          isRequired
         />
       </Stack>
       <Stack
@@ -579,6 +584,7 @@ const AddNewVendor: React.FC<AddNewVendorProps> = ({
           sx={{
             width: 220,
           }}
+          isRequired
         />
         <Select // assignee (not in the server model!)
           items={formattedUsers}
@@ -592,6 +598,7 @@ const AddNewVendor: React.FC<AddNewVendorProps> = ({
             width: 220,
           }}
           error={errors.assignee}
+          isRequired
         />
         <DatePicker // reviewDate
           label="Review date"
@@ -604,6 +611,7 @@ const AddNewVendor: React.FC<AddNewVendorProps> = ({
               : dayjs(new Date())
           }
           handleDateChange={handleDateChange}
+          isRequired
         />
       </Stack>
     </TabPanel>

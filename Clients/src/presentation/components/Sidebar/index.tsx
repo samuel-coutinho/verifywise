@@ -25,6 +25,7 @@ import { ReactComponent as ArrowRight } from "../../assets/icons/right-arrow.svg
 import { ReactComponent as Dashboard } from "../../assets/icons/dashboard.svg";
 import { ReactComponent as DotsVertical } from "../../assets/icons/dots-vertical.svg";
 import { ReactComponent as LogoutSvg } from "../../assets/icons/logout.svg";
+import { ReactComponent as ReportingSvg } from "../../assets/icons/reporting.svg";
 
 import { ReactComponent as Compliance } from "../../assets/icons/globe.svg";
 import { ReactComponent as Assessment } from "../../assets/icons/chart.svg";
@@ -36,13 +37,13 @@ import Logo from "../../assets/imgs/logo.png";
 
 import Select from "../Inputs/Select";
 import Avatar from "../Avatar/VWAvatar";
-import { clearAuthState } from "../../../application/authentication/authSlice";
 import { SelectChangeEvent } from "@mui/material";
 import { VerifyWiseContext } from "../../../application/contexts/VerifyWise.context";
 import { Link as RouterLink } from "react-router-dom";
 import { Link as MuiLink } from "@mui/material";
 import { User } from "../../../application/hooks/useUsers";
 import { ROLES } from "../../../application/constants/roles";
+import useLogout from "../../../application/hooks/useLogout";
 
 const menu = [
   {
@@ -69,6 +70,11 @@ const menu = [
     name: "Evidences",
     icon: <FileManager />,
     path: "/file-manager",
+  },
+  {
+    name: "Reporting",
+    icon: <ReportingSvg />,
+    path: "/reporting",
   },
 ];
 
@@ -103,6 +109,7 @@ const Sidebar = ({ projects }: { projects: any }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [popup, setPopup] = useState();
   const [selectedProjectId, setSelectedProjectId] = useState("");
+  const logout = useLogout();
 
   const { dashboardValues, setDashboardValues, setCurrentProjectId, userId } =
     useContext(VerifyWiseContext);
@@ -144,18 +151,6 @@ const Sidebar = ({ projects }: { projects: any }) => {
 
   const closePopup = () => {
     setAnchorEl(null);
-  };
-
-  /**
-   * Handles logging out the user
-   *
-   */
-  const logout = async () => {
-    // Clear the authentication token by dispatching the logout action
-    dispatch(clearAuthState());
-
-    // Navigate to the login page
-    navigate("/login");
   };
 
   const customMenuHandler = () => {

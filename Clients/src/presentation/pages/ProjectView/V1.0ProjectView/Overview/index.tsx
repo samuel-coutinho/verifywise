@@ -17,7 +17,7 @@ import { User } from "../../../../../domain/User";
 import { getEntityById } from "../../../../../application/repository/entity.repository";
 import useProjectRisks from "../../../../../application/hooks/useProjectRisks";
 
-const VWProjectOverview = ({ project }: { project?: Project }) => {
+const VWProjectOverview = ({ project }: { project?: Project}) => {
   const [searchParams] = useSearchParams();
   const projectId = searchParams.get("projectId") ?? "0";
   const { dashboardValues } = useContext(VerifyWiseContext);
@@ -68,7 +68,7 @@ const VWProjectOverview = ({ project }: { project?: Project }) => {
 
   const projectMembers: string[] = project
     ? users
-        .filter((user: User) => project.members.includes(user.id?.toString() || ''))
+        .filter((user: { id: any; }) => project.members.includes(user.id || ''))
         .map((user: User) => `${user.name} ${user.surname}`)
     : [];
 
@@ -82,10 +82,17 @@ const VWProjectOverview = ({ project }: { project?: Project }) => {
               title="Last updated"
               body={formatDate(project.last_updated.toString())}
             />
-            <InfoCard
-              title="Last updated by"
-              body={`${user.name} ${user.surname}`}
-            />
+            {user.name !== undefined && user.surname !== undefined ? <>
+              <InfoCard
+                title="Last updated by"
+                body={`${user.name} ${user.surname}`}
+              />
+            </> : <>
+              <InfoCard
+                title="Last updated by"
+                body="N/A"
+              />
+            </>}
           </>
         ) : (
           <>
@@ -136,7 +143,7 @@ const VWProjectOverview = ({ project }: { project?: Project }) => {
         {project ? (
           <>
             <Typography sx={projectRiskSection}>Project risks</Typography>
-            <RisksCard projectRisksSummary={projectRisksSummary} />
+            <RisksCard risksSummary={projectRisksSummary} />
           </>
         ) : (
           <>

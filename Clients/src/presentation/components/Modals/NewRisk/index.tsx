@@ -26,14 +26,18 @@ import Alert from "../../Alert";
 import { checkStringValidation } from "../../../../application/validations/stringValidation";
 import { VerifyWiseContext } from "../../../../application/contexts/VerifyWise.context";
 import useUsers from "../../../../application/hooks/useUsers";
-import { Likelihood, RISK_LABELS, Severity } from "../../RiskLevel/constants";
-import { RiskLikelihood, RiskSeverity } from "../../RiskLevel/riskValues";
 import VWToast from "../../../vw-v2-components/Toast";
 import { logEngine } from "../../../../application/tools/log.engine";
-import { User } from "../../../../domain/User";
-import { getUserForLogging } from "../../../../application/tools/userHelpers";
 import VWButton from "../../../vw-v2-components/Buttons";
 import SaveIcon from "@mui/icons-material/Save";
+import {
+  riskSeverityItems,
+  likelihoodItems,
+} from "../../AddNewRiskForm/projectRiskValue";
+
+import { RiskCalculator } from "../../../tools/riskCalculator";
+
+import { RiskLikelihood, RiskSeverity } from "../../RiskLevel/riskValues";
 
 interface ExistingRisk {
   id?: number;
@@ -89,26 +93,27 @@ const RISK_LEVEL_OPTIONS = [
 ];
 
 const LIKELIHOOD_OPTIONS = [
-  { _id: 1, name: "Rare" },
-  { _id: 2, name: "Unlikely" },
-  { _id: 3, name: "Possible" },
-  { _id: 4, name: "Likely" },
-  { _id: 5, name: "Almost certain" },
-];
+  { _id: 1, name: RiskLikelihood.Rare },
+  { _id: 2, name: RiskLikelihood.Unlikely },
+  { _id: 3, name: RiskLikelihood.Possible },
+  { _id: 4, name: RiskLikelihood.Likely },
+  { _id: 5, name: RiskLikelihood.AlmostCertain },
+] as const;
+
+const RISK_SEVERITY_OPTIONS = [
+  { _id: 1, name: RiskSeverity.Negligible },
+  { _id: 2, name: RiskSeverity.Minor },
+  { _id: 3, name: RiskSeverity.Moderate },
+  { _id: 4, name: RiskSeverity.Major },
+  { _id: 5, name: RiskSeverity.Catastrophic },
+] as const;
 
 const IMPACT_OPTIONS = [
   { _id: 1, name: "Negligible" },
   { _id: 2, name: "Minor" },
   { _id: 3, name: "Moderate" },
-  { _id: 4, name: "Critical" },
-];
-
-const RISK_SEVERITY_OPTIONS = [
-  { _id: 1, name: "No risk" },
-  { _id: 2, name: "Low risk" },
-  { _id: 3, name: "Medium risk" },
-  { _id: 4, name: "High risk" },
-  { _id: 5, name: "Very high risk" },
+  { _id: 4, name: "Major" },
+  { _id: 5, name: "Critical" },
 ];
 
 const AddNewRisk: React.FC<AddNewRiskProps> = ({
@@ -120,10 +125,13 @@ const AddNewRisk: React.FC<AddNewRiskProps> = ({
 }) => {
   const theme = useTheme();
   const { dashboardValues } = useContext(VerifyWiseContext);
-  const VENDOR_OPTIONS = dashboardValues?.vendors?.map((vendor: any) => ({
-    _id: vendor.id,
-    name: vendor.vendor_name,
-  }));
+  const VENDOR_OPTIONS =
+    dashboardValues?.vendors?.length > 0
+      ? dashboardValues.vendors.map((vendor: any) => ({
+          _id: vendor.id,
+          name: vendor.vendor_name,
+        }))
+      : [{ _id: "no-vendor", name: "No Vendor Exists" }];
 
   const [values, setValues] = useState({
     risk_description: "",
@@ -145,17 +153,16 @@ const AddNewRisk: React.FC<AddNewRiskProps> = ({
   } | null>(null);
 
   const { users } = useUsers();
-
-  const user: User = {
-    id: Number(localStorage.getItem("userId")) || -1,
-    email: "N/A",
-    name: "N/A",
-    surname: "N/A",
-  };
   const formattedUsers = users?.map((user) => ({
     _id: user.id,
     name: `${user.name} ${user.surname}`,
   }));
+  useEffect(() => {
+    if (!isOpen) {
+      setValues(initialState);
+      setErrors({} as FormErrors);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen && !existingRisk) {
@@ -168,13 +175,11 @@ const AddNewRisk: React.FC<AddNewRiskProps> = ({
         impact:
           IMPACT_OPTIONS.find((r) => r.name === existingRisk.impact)?._id || 0,
         action_owner:
-          formattedUsers?.find(
-            (user) => user.name === existingRisk.action_owner
-          )?._id || "",
+          formattedUsers?.find((user) => user._id === existingRisk.action_owner)
+            ?._id || "",
         risk_severity:
-          RISK_SEVERITY_OPTIONS.find(
-            (r) => r.name === existingRisk.risk_severity
-          )?._id || 0,
+          riskSeverityItems.find((r) => r.name === existingRisk.risk_severity)
+            ?._id || 0,
         likelihood:
           LIKELIHOOD_OPTIONS.find((r) => r.name === existingRisk.likelihood)
             ?._id || 0,
@@ -199,22 +204,10 @@ const AddNewRisk: React.FC<AddNewRiskProps> = ({
    * @param field - The field name to update
    * @param value - The new value
    */
-  const getRiskLevel = (score: number): { text: string; color: string } => {
-    if (score <= 3) {
-      return RISK_LABELS.low;
-    } else if (score <= 6) {
-      return RISK_LABELS.medium;
-    } else if (score <= 9) {
-      return RISK_LABELS.high;
-    } else {
-      return RISK_LABELS.critical;
-    }
-  };
 
   const handleOnChange = (field: string, value: string | number) => {
     setValues((prevValues) => ({
       ...prevValues,
-
       [field]: value,
     }));
     setErrors({ ...errors, [field]: "" });
@@ -256,14 +249,9 @@ const AddNewRisk: React.FC<AddNewRiskProps> = ({
     if (!values.vendor_id || Number(values.vendor_id) === 0) {
       newErrors.vendor_id = "Please select a vendor from the dropdown";
     }
-    const action_owner = checkStringValidation(
-      "Risk Action Owner",
-      values.action_owner,
-      1,
-      64
-    );
-    if (!action_owner.accepted) {
-      newErrors.action_owner = action_owner.message;
+    if (!values.action_owner || Number(values.action_owner) === 0) {
+      newErrors.action_owner =
+        "Please select an action owner from the dropdown";
     }
     if (!values.impact || Number(values.impact) === 0) {
       newErrors.impact = "Please select an impact status from the dropdown";
@@ -286,25 +274,35 @@ const AddNewRisk: React.FC<AddNewRiskProps> = ({
    */
 
   const handleOnSave = async () => {
-    const risk_risklevel = getRiskLevel(
-      values.likelihood * values.risk_severity
+    const selectedLikelihood = LIKELIHOOD_OPTIONS.find(
+      (r) => r._id === values.likelihood
+    );
+    const selectedSeverity = RISK_SEVERITY_OPTIONS.find(
+      (r) => r._id === values.risk_severity
+    );
+    if (!selectedLikelihood || !selectedSeverity) {
+      console.error("Could not find selected likelihood or severity");
+      return;
+    }
+
+    // Use RiskCalculator to get the risk level
+    const risk_risklevel = RiskCalculator.getRiskLevel(
+      selectedLikelihood?.name,
+      selectedSeverity?.name
     );
     const _riskDetails = {
+      vendor_id: values.vendor_id,
       risk_description: values.risk_description,
       impact_description: values.impact_description,
       impact:
         IMPACT_OPTIONS.find((r) => r._id === Number(values.impact))?.name || "",
       action_owner: formattedUsers?.find(
         (user) => user._id === values.action_owner
-      )?.name,
+      )?._id,
       action_plan: values.action_plan,
-      risk_severity:
-        RISK_SEVERITY_OPTIONS.find((r) => r._id === values.risk_severity)
-          ?.name || "",
-      risk_level: risk_risklevel.text,
-      likelihood:
-        LIKELIHOOD_OPTIONS.find((r) => r._id === values.likelihood)?.name || "",
-      vendor_id: values.vendor_id,
+      risk_severity: selectedSeverity.name,
+      risk_level: risk_risklevel.level,
+      likelihood: selectedLikelihood.name,
     };
     if (existingRisk) {
       await updateRisk(existingRisk.id!, _riskDetails);
@@ -347,7 +345,6 @@ const AddNewRisk: React.FC<AddNewRiskProps> = ({
       logEngine({
         type: "error",
         message: "Unexpected response. Please try again.",
-        user: getUserForLogging(user),
       });
 
       setAlert({
@@ -360,6 +357,7 @@ const AddNewRisk: React.FC<AddNewRiskProps> = ({
       setTimeout(() => setAlert(null), 3000);
     } finally {
       setIsSubmitting(false);
+      setValues(initialState);
     }
   };
 
@@ -398,7 +396,6 @@ const AddNewRisk: React.FC<AddNewRiskProps> = ({
       logEngine({
         type: "error",
         message: "Unexpected response. Please try again.",
-        user: getUserForLogging(user),
       });
 
       setAlert({
@@ -411,6 +408,7 @@ const AddNewRisk: React.FC<AddNewRiskProps> = ({
       setTimeout(() => setAlert(null), 3000);
     } finally {
       setIsSubmitting(false);
+      setValues(initialState);
     }
   };
 
@@ -423,7 +421,7 @@ const AddNewRisk: React.FC<AddNewRiskProps> = ({
       >
         <Select
           items={VENDOR_OPTIONS}
-          label="vendor"
+          label="Vendor"
           placeholder="Select vendor"
           isHidden={false}
           id=""
@@ -433,6 +431,7 @@ const AddNewRisk: React.FC<AddNewRiskProps> = ({
           sx={{
             width: 350,
           }}
+          isRequired
         />
         <Field
           label="Risk description"
@@ -440,6 +439,7 @@ const AddNewRisk: React.FC<AddNewRiskProps> = ({
           value={values.risk_description}
           onChange={(e) => handleOnChange("risk_description", e.target.value)}
           error={errors.risk_description}
+          isRequired
         />
       </Stack>
       <Stack
@@ -459,20 +459,12 @@ const AddNewRisk: React.FC<AddNewRiskProps> = ({
           sx={{
             width: 350,
           }}
+          isRequired
         />
         <Select
-          items={[
-            { _id: Likelihood.Rare, name: RiskLikelihood.Rare },
-            { _id: Likelihood.Unlikely, name: RiskLikelihood.Unlikely },
-            { _id: Likelihood.Possible, name: RiskLikelihood.Possible },
-            { _id: Likelihood.Likely, name: RiskLikelihood.Likely },
-            {
-              _id: Likelihood.AlmostCertain,
-              name: RiskLikelihood.AlmostCertain,
-            },
-          ]}
+          items={likelihoodItems}
           label="Likelihood"
-          placeholder="Select risk severity"
+          placeholder="Select likelihood"
           isHidden={false}
           id=""
           onChange={(e) => handleOnChange("likelihood", e.target.value)}
@@ -481,6 +473,7 @@ const AddNewRisk: React.FC<AddNewRiskProps> = ({
           sx={{
             width: 350,
           }}
+          isRequired
         />
       </Stack>
       <Stack
@@ -495,13 +488,7 @@ const AddNewRisk: React.FC<AddNewRiskProps> = ({
           gap={theme.spacing(8)}
         >
           <Select
-            items={[
-              { _id: Severity.Negligible, name: RiskSeverity.Negligible },
-              { _id: Severity.Minor, name: RiskSeverity.Minor },
-              { _id: Severity.Moderate, name: RiskSeverity.Moderate },
-              { _id: Severity.Major, name: RiskSeverity.Major },
-              { _id: Severity.Critical, name: RiskSeverity.Critical },
-            ]}
+            items={riskSeverityItems}
             label="Risk severity"
             placeholder="Select risk severity"
             isHidden={false}
@@ -512,6 +499,7 @@ const AddNewRisk: React.FC<AddNewRiskProps> = ({
             sx={{
               width: 350,
             }}
+            isRequired
           />
 
           <Select
@@ -526,6 +514,7 @@ const AddNewRisk: React.FC<AddNewRiskProps> = ({
             sx={{
               width: 350,
             }}
+            isRequired
           />
           <Field
             label="Impact description"
@@ -535,6 +524,7 @@ const AddNewRisk: React.FC<AddNewRiskProps> = ({
               handleOnChange("impact_description", e.target.value)
             }
             error={errors.impact_description}
+            isRequired
           />
         </Box>
 
@@ -545,6 +535,7 @@ const AddNewRisk: React.FC<AddNewRiskProps> = ({
           value={values.action_plan}
           error={errors.action_plan}
           onChange={(e) => handleOnChange("action_plan", e.target.value)}
+          isRequired
         />
       </Stack>
       <Stack
@@ -616,7 +607,7 @@ const AddNewRisk: React.FC<AddNewRiskProps> = ({
               fontWeight={600}
               marginBottom={theme.spacing(5)}
             >
-              {existingRisk ? "Edit Risk" : "Add new Risk"}
+              {existingRisk ? "Edit risk" : "Add new risk"}
             </Typography>
             <Close style={{ cursor: "pointer" }} onClick={setIsOpen} />
           </Stack>

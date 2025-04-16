@@ -159,13 +159,6 @@ const AddNewRiskForm: FC<AddNewRiskFormProps> = ({
 
   useEffect(() => {
     if (popupStatus === "edit") {
-      // Find user_id from fromInputValue saved as "name surname"
-      const userId = users.find(
-        (user) =>
-          `${user.name}${user.surname ? " " + user.surname : ""}` ===
-          inputValues.risk_owner
-      )?.id;
-      const actionOwner = userId ? parseInt(userId) : 1;
 
       // riskData
       const currentRiskData: RiskFormValues = {
@@ -469,7 +462,7 @@ const AddNewRiskForm: FC<AddNewRiskFormProps> = ({
             (item) => item._id === mitigationValues.approvalStatus
           )?.name || "",
         date_of_assessment: mitigationValues.dateOfAssessment,
-      };           
+      };
 
       try {
         const response = (popupStatus !== "new") ? 

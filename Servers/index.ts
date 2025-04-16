@@ -1,7 +1,8 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
-import { checkAndCreateTables } from "./database/db";
+import cookieParser from "cookie-parser";
+// import { checkAndCreateTables } from "./database/db";
 
 import assessmentRoutes from "./routes/assessment.route";
 import controlRoutes from "./routes/control.route";
@@ -23,25 +24,48 @@ import controlCategory from "./routes/controlCategory.route";
 import autoDriverRoutes from "./routes/autoDriver.route";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
+import { parseOrigins, testOrigin } from "./utils/parseOrigins";
 
 const swaggerDoc = YAML.load("./swagger.yaml");
 
 const app = express();
 
-const port = process.env.PORT || 3000;
+const DEFAULT_PORT = "3000";
+const DEFAULT_HOST = "localhost";
+
+const portString = process.env.PORT || DEFAULT_PORT;
+const host = process.env.HOST || DEFAULT_HOST;
+
+const port = parseInt(portString, 10); // Convert to number
+
+const DEFAULT_FRONTEND_URL = "http://localhost:8082";
+
+const frontEndUrl = process.env.FRONTEND_URL || DEFAULT_FRONTEND_URL;
 
 try {
-  (async () => {
-    await checkAndCreateTables();
-  })();
+  // (async () => {
+  //   await checkAndCreateTables();
+  // })();
   // Middlewares
+
+  // Development
+  // (async () => {
+  //   await sequelize.sync();
+  // })();
+
+  const allowedOrigins = parseOrigins(frontEndUrl);
+
   app.use(
     cors({
-      origin: "*",
+      origin: (origin, callback) => {
+        testOrigin({origin, allowedOrigins , callback});
+      },
+      credentials: true,
     })
   );
   app.use(helmet()); // Use helmet for security headers
   app.use(express.json());
+  app.use(cookieParser());
 
   // Routes
   app.use("/users", userRoutes);
@@ -69,7 +93,7 @@ try {
   });
 
   app.listen(port, () => {
-    console.log(`Server running on port http://localhost:${port}/`);
+    console.log(`Server running on port http://${host}:${port}/`);
   });
 } catch (error) {
   console.error("Error setting up the server:", error);
