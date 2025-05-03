@@ -5,10 +5,13 @@ module.exports = {
   async up(queryInterface, Sequelize) {
     const transaction = await queryInterface.sequelize.transaction();
     try {
-      await queryInterface.sequelize.query(
-        "CREATE TYPE enum_files_source AS ENUM ('Assessment tracker group', 'Compliance tracker group');",
-        { transaction }
-      );
+      await queryInterface.sequelize.query(`
+        DO $$ BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'enum_files_source') THEN
+            CREATE TYPE enum_files_source AS ENUM ('Assessment tracker group', 'Compliance tracker group');
+          END IF;
+        END $$;
+      `, { transaction });
       await queryInterface.sequelize.query(
         "ALTER TABLE files ADD COLUMN source enum_files_source;",
         { transaction }

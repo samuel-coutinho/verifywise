@@ -37,7 +37,8 @@ export class RoleModel extends Model<Role> {
   is_demo?: boolean;
 
   @Column({
-    type: DataType.DATE
+    type: DataType.DATE,
+    defaultValue: DataType.NOW
   })
   created_at?: Date;
 }
