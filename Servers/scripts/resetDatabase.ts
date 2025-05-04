@@ -27,6 +27,24 @@ async function resetDatabase() {
     `);
     console.log('All tables dropped.');
 
+    await sequelize.query(`
+      DO $$ DECLARE
+          r RECORD;
+      BEGIN
+          FOR r IN (
+              SELECT n.nspname, t.typname
+              FROM pg_type t
+              JOIN pg_enum e ON t.oid = e.enumtypid
+              JOIN pg_namespace n ON n.oid = t.typnamespace
+              WHERE n.nspname = current_schema()
+              GROUP BY n.nspname, t.typname
+          ) LOOP
+              EXECUTE 'DROP TYPE IF EXISTS "' || r.typname || '" CASCADE';
+          END LOOP;
+      END $$;
+    `);
+    console.log('All enum types dropped.');
+
     // Run migrations
     await execAsync('npx sequelize db:migrate');
     console.log('Migrations applied.');
