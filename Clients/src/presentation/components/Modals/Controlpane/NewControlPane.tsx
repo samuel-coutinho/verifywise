@@ -11,9 +11,9 @@ import {
 } from "@mui/material";
 import { ReactComponent as CloseIcon } from "../../../assets/icons/close.svg";
 import DropDowns from "../../Inputs/Dropdowns";
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import AuditorFeedback from "../ComplianceFeedback/ComplianceFeedback";
-import { updateEntityById } from "../../../../application/repository/entity.repository";
+import { getEntityById, updateEntityById } from "../../../../application/repository/entity.repository";
 import { Subcontrol } from "../../../../domain/types/Subcontrol";
 import { Control } from "../../../../domain/types/Control";
 import { FileData } from "../../../../domain/types/File";
@@ -22,6 +22,7 @@ import VWToast from "../../../vw-v2-components/Toast";
 import SaveIcon from "@mui/icons-material/Save";
 import VWButton from "../../../vw-v2-components/Buttons";
 import { VerifyWiseContext } from "../../../../application/contexts/VerifyWise.context";
+import VWSkeleton from "../../../vw-v2-components/Skeletons";
 
 const tabStyle = {
   textTransform: "none",
@@ -36,23 +37,29 @@ const tabStyle = {
 };
 
 const NewControlPane = ({
-  data,
+  _data,
   isOpen,
   handleClose,
   controlCategoryId,
   OnSave,
   OnError,
   onComplianceUpdate,
+  projectId,
+  projectFrameworkId,
 }: {
-  data: Control;
+  _data: Control;
   isOpen: boolean;
   handleClose: () => void;
   controlCategoryId?: string;
   OnSave?: (state: Control) => void;
   OnError?: () => void;
   onComplianceUpdate?: () => void;
+  projectId: number;
+  projectFrameworkId: number;
 }) => {
   const theme = useTheme();
+  const [data, setData] = useState<Control>(_data);
+  const [loading, setLoading] = useState<boolean>(true);
   const [selectedTab, setSelectedTab] = useState<number>(0);
   const [activeSection, setActiveSection] = useState<string>("Overview");
   const [alert, setAlert] = useState<{
@@ -70,6 +77,35 @@ const NewControlPane = ({
   }>({});
   const context = useContext(VerifyWiseContext);
 
+  useEffect(() => {
+    const fetchControls = async () => {
+      setLoading(true);
+      const response = await getEntityById({
+        routeUrl: `eu-ai-act/controlById?controlId=${_data.id}&projectFrameworkId=${projectFrameworkId}`,
+      });
+      setData(response.data);
+      setLoading(false);
+      setState({
+        order_no: response.data.order_no,
+        id: response.data.id,
+        title: response.data.title,
+        description: response.data.description,
+        status: response.data.status,
+        approver: response.data.approver,
+        risk_review: response.data.risk_review,
+        owner: response.data.owner,
+        reviewer: response.data.reviewer,
+        implementation_details: response.data.implementation_details,
+        due_date: response.data.due_date,
+        control_category_id: response.data.control_category_id, // Added missing property
+    
+        subControls: response.data.subControls,
+      })
+    };
+
+    fetchControls();
+  }, [isOpen])
+
   const sanitizeField = (value: string | undefined | null): string => {
     if (!value || value === "undefined") {
       return "";
@@ -77,7 +113,7 @@ const NewControlPane = ({
     return value;
   };
 
-  const initialSubControlState = data
+  const initialSubControlState = (data.subControls || []).length > 0 && data
     .subControls!.slice()
     .sort((a, b) => a.order_no! - b.order_no!)
     .map((subControl: Subcontrol) => ({
@@ -113,7 +149,7 @@ const NewControlPane = ({
     due_date: data.due_date,
     control_category_id: data.control_category_id, // Added missing property
 
-    subControls: initialSubControlState,
+    subControls: initialSubControlState || [],
   }));
 
   const handleSelectedTab = (_: React.SyntheticEvent, newValue: number) => {
@@ -193,7 +229,6 @@ const NewControlPane = ({
   };
 
   const confirmSave = async () => {
-    console.log("state controlToSave : ", state);
     setIsSubmitting(true);
 
     try {
@@ -283,16 +318,13 @@ const NewControlPane = ({
 
       // Add user and project info
       formData.append("user_id", context?.userId?.toString() || "");
-      formData.append(
-        "project_id",
-        context?.currentProjectId?.toString() || ""
-      );
+      formData.append("project_id", projectId.toString());
 
       // Add delete array if needed (you might want to track deleted files)
       formData.append("delete", JSON.stringify(deletedFilesIds));
 
       const response = await updateEntityById({
-        routeUrl: `/controls/saveControls/${state.id}`,
+        routeUrl: `/eu-ai-act/saveControls/${state.id}`,
         body: formData,
         headers: {
           "Content-Type": "multipart/form-data",
@@ -333,6 +365,16 @@ const NewControlPane = ({
   const handleCloseWrapper = () => {
     handleClose();
   };
+
+  if (loading) {
+    return (
+      <Stack spacing={2}>
+        <VWSkeleton variant="rectangular" width="100%" height={36} />
+        <VWSkeleton variant="rectangular" width="100%" height={36} />
+        <VWSkeleton variant="rectangular" width="100%" height={36} />
+      </Stack>
+    );
+  }
 
   return (
     <>
@@ -447,6 +489,7 @@ const NewControlPane = ({
             {data.description}
           </Typography>
           <DropDowns
+            projectId={projectId}
             key={`control-${data.id}`}
             isControl={true}
             elementId={`control-${data.id}`}
@@ -540,6 +583,7 @@ const NewControlPane = ({
                   elementId={`sub-control-${data.order_no}.${
                     state.subControls![selectedTab].id
                   }`}
+                  projectId={projectId}
                   state={state.subControls![selectedTab]}
                   setState={(newState) =>
                     handleSubControlStateChange(selectedTab, newState)

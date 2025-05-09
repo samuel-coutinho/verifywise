@@ -14,6 +14,9 @@ import { Project } from "../../../../domain/types/Project";
 
 const ComplianceTracker = ({ project }: { project: Project }) => {
   const currentProjectId = project?.id;
+  const currentProjectFramework = project.framework.filter(
+    p => p.framework_id === 1
+  )[0].project_framework_id;
   const [complianceData, setComplianceData] = useState<ComplianceData>();
   const [controlCategories, setControlCategories] =
     useState<ControlCategoryModel[]>();
@@ -44,7 +47,7 @@ const ComplianceTracker = ({ project }: { project: Project }) => {
 
     try {
       const response = await getEntityById({
-        routeUrl: `projects/compliance/progress/${currentProjectId}`,
+        routeUrl: `/eu-ai-act/compliances/progress/${currentProjectFramework}`,
       });
       setComplianceData(response.data);
     } catch (err) {
@@ -60,7 +63,7 @@ const ComplianceTracker = ({ project }: { project: Project }) => {
 
     try {
       const response = await getEntityById({
-        routeUrl: `/controlCategory/byprojectid/${currentProjectId}`,
+        routeUrl: `/eu-ai-act/controlCategories`,
       });
       setControlCategories(response);
     } catch (err) {
@@ -148,6 +151,8 @@ const ComplianceTracker = ({ project }: { project: Project }) => {
                 <ControlCategoryTile
                   controlCategory={controlCategory}
                   onComplianceUpdate={fetchComplianceData}
+                  projectId={currentProjectId}
+                  projectFrameworkId={currentProjectFramework}
                 />
               </div>
             ) : (
@@ -155,6 +160,8 @@ const ComplianceTracker = ({ project }: { project: Project }) => {
                 key={controlCategory.id}
                 controlCategory={controlCategory}
                 onComplianceUpdate={fetchComplianceData}
+                projectId={currentProjectId}
+                projectFrameworkId={currentProjectFramework}
               />
             )
           )}
