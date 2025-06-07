@@ -10,6 +10,7 @@ const execAsync = promisify(exec);
 
 async function resetDatabase() {
   const transaction = await sequelize.transaction();
+  let committed = false;
   try {
     console.log('Resetting database...');
 
@@ -67,6 +68,7 @@ async function resetDatabase() {
 
     const admin = await createNewUserQuery(adminData, transaction, true);
     await transaction.commit();
+    committed = true;
     console.log('Default admin user created.');
 
     // Insert mock data (awaiting it to complete)
@@ -85,6 +87,22 @@ async function resetDatabase() {
     const projectId = (project[0] as { id: number }).id;
     console.log(`Project found with ID: ${projectId}`);
 
+    // Check if the admin user is already a member of the project
+    const existingMember = await sequelize.query(
+      'SELECT * FROM projects_members WHERE project_id = :project_id AND user_id = :user_id',
+      {
+        replacements: { project_id: projectId, user_id: admin.id },
+        type: QueryTypes.SELECT,
+      }
+    );
+
+    if (existingMember && existingMember.length > 0) {
+      console.log('Admin user is already a member of the project.');
+      console.log('Database reset successfully.');
+      process.exit(0);
+    }
+
+    // Insert the admin user as a member of the project
     await sequelize.query(
       `INSERT INTO projects_members (project_id, user_id, is_demo) VALUES (:project_id, :user_id, :is_demo) RETURNING *`,
       {
@@ -99,7 +117,13 @@ async function resetDatabase() {
 
     process.exit(0);
   } catch (err) {
-    await transaction.rollback();
+    if (!committed) {
+      try {
+        await transaction.rollback();
+      } catch (rollbackErr) {
+        console.error('Rollback failed:', rollbackErr);
+      }
+    }
     console.error('Error resetting database:', err);
     process.exit(1);
   }
