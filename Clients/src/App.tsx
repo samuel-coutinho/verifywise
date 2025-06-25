@@ -22,6 +22,7 @@ import { AlertProps } from "./domain/interfaces/iAlert";
 import { setShowAlertCallback } from "./infrastructure/api/customAxios";
 import Alert from "./presentation/components/Alert";
 import useUsers from "./application/hooks/useUsers";
+import injectUserGuidingScript from "./application/tools/injectUserGuiding";
 
 function App() {
   const mode = useSelector((state: AppState) => state.ui?.mode || "light");
@@ -36,6 +37,7 @@ function App() {
       setAlert(alertProps);
       setTimeout(() => setAlert(null), 5000);
     });
+    injectUserGuidingScript();
     return () => setShowAlertCallback(() => {});
   }, []);
 
