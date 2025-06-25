@@ -9,6 +9,7 @@ const injectUserGuidingScript = (debug = false): void => {
   }
 
   const decoded = atob(encoded);
+  console.log("UserGuiding script decoded:", decoded);
   const container = document.createElement("div");
   container.innerHTML = decoded;
 
