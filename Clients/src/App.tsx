@@ -37,7 +37,7 @@ function App() {
       setAlert(alertProps);
       setTimeout(() => setAlert(null), 5000);
     });
-    injectUserGuidingScript(true);
+    injectUserGuidingScript(false);
     return () => setShowAlertCallback(() => {});
   }, []);
 
