@@ -2,15 +2,13 @@ const injectUserGuidingScript = (debug = false): void => {
   if (!import.meta.env.PROD && !debug) return;
 
   
-  const encoded = import.meta.env.VITE_USER_GUIDING_SCRIPT_BASE64;
-  console.log("encoded = ", encoded);
+  const encoded = import.meta.env.VITE_USER_GUIDING_SCRIPT_BASE64; 
   if (!encoded) {
     if (debug) console.warn("UserGuiding: No script base64 found.");
     return;
   }
 
   const decoded = atob(encoded);
-  console.log("decoded = ", decoded);
   const container = document.createElement("div");
   container.innerHTML = decoded;
 
